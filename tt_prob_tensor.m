@@ -18,6 +18,24 @@ defaults = {1e-8, 100, ...
     model_S, fixed_S, model_V, fixed_V, model_G, fixed_G, verbose]...
     = internal.stats.parseArgs(paramNames, defaults, varargin{:});
 
+%% Check D is valid
+N = size(X);
+if length(D) == ndims(X)
+    if D(1) == 1
+        D = [D,1];
+    elseif D(end) == 1
+        D = [1,D];
+    else
+        error('Input error: specified model order not understood')
+    end
+    
+elseif length(D) == ndims(X)-1
+    D = [1,D,1];
+elseif length(D) == ndims(X)+1
+    assert(D(1)==1 && D(end)==1, 'Input error, D(1) and D(end) must be 1')
+end
+
+assert(all(D(2:end-1)<=N(1:end-1)), 'Model order cannot be higher than mode observations.')
 %% Initialize
 SST = sum(sum(X(:).^2));
 prior_s = ones(D(end-1),1)*sqrt(SST/numel(X));
@@ -25,7 +43,7 @@ s_prior_log_value = ones(D(end-1),1)*0;
 s_lb = zeros(D(end-1),1);
 s_ub = ones(D(end-1),1)*inf;
 
-N = size(X);
+
 if ~isempty(G)
     G_sizes = cellfun(@size, G,  'UniformOutput', false);
     D = ones(ndims(X)+1,1);
@@ -46,6 +64,7 @@ else
     
     % Last mode
     ES = diag(prior_s);
+    ES = sqrt(norm(X(:),'fro')^2/length(prior_s))*eye(length(prior_s));
     %ES = diag(rand(D(end-1),1)*2+0.5);
     EV = orth(randn(N(end), D(end-1)));
     G{end} = ES*EV';
@@ -56,7 +75,7 @@ else
     
 end
 
-Etau=tau_alpha0/tau_beta0;
+Etau=tau_alpha0/tau_beta0*1/mean(X(:).^2);
 
 %%
 %% Setup how information should be displayed.
@@ -89,14 +108,14 @@ while iter < max_iter && dELBO > conv_crit
     time_cpu = cputime;
     %% Update each factor...
     if iter == 1 || model_G
-        for i = 1:ndims(X)-1
-        %for i = randperm(ndims(X)-1)
+        %for i = 1:ndims(X)-1
+        for i = randperm(ndims(X)-1)
             
             % Contract modes
             sG = size(G{i});
             x_con = contract_fixed_modes(X,G,i);
-            
             assert(sum(abs(x_con(:)))>0, 'No residual..')
+            
             % Update von-Mises-Fisher Distribution
             F=reshape(x_con, prod(sG(1:end-1)), sG(end))*Etau;
             
@@ -104,26 +123,16 @@ while iter < max_iter && dELBO > conv_crit
             % orthogonal
             [UU,SS,VV]=svd(F, 'econ');
             [f,V,lF]=hyperg(size(F,1),diag(SS),3);
-%             f = f/max(f);
-            
             assert(max(f)>eps, 'Subspace is pruned...')
-            Gi_old = permute(G{i},[3,1,2]); Gi_old = Gi_old(:,:)'; 
-%             disp('Gi old')
-%             disp(Gi_old'*Gi_old)
             
             % Get expected value of G{i} and the entropy of vMF
             G{i}=reshape(UU*diag(f)*VV', sG);
             H_G(i)= lF-sum(sum(F(:).*G{i}(:)));  %#ok<AGROW>
-            %H_G(i) = sum(sum(F.*(UU*diag(f)*VV')'));
-            Gi_new = permute(G{i},[3,1,2]); Gi_new = Gi_new(:,:)'; 
-%             disp('Gi new')
-%             disp(Gi_new'*Gi_new)
             
             assert(sum(abs(G{i}(:)))>0, 'An entire cart was turned off')
         end
     end
     %% Update the last factor
-    % G{end} = S*V'
     x_con = contract_fixed_modes(X,G,ndims(X));
     
     % Update V
@@ -136,7 +145,7 @@ while iter < max_iter && dELBO > conv_crit
         
         % Get expected value of G{i} and the entropy of vMF
         EV=(UU*diag(f)*VV');
-        H_V= lF-sum(sum(F.*EV));  %#ok<AGROW>
+        H_V= lF-sum(sum(F.*EV));
         P_V = 0;
     end
     
@@ -182,10 +191,9 @@ while iter < max_iter && dELBO > conv_crit
     assert(isreal(Elog_tau), 'Not real!')
     
     %% Calculate Elbo
-    
     elbo(iter) = 0.5*numel(X)*(-log(2*pi)+Elog_tau)-0.5*SSE*Etau...
         +P_tau+H_tau...
-        +sum(H_G)... %Note, P_G is 0, when
+        +sum(H_G)... %Note, P_G is 0, when P(G) is a uniform prior on the sphere.
         +P_V+H_V...
         +P_S+sum(H_S);
   
@@ -200,9 +208,7 @@ while iter < max_iter && dELBO > conv_crit
     if iter > 1
         dCost = (rmse(iter)-rmse(iter-1))/abs(rmse(iter-1)); % Should decrease
         dELBO = (elbo(iter)-elbo(iter-1))/abs(elbo(iter-1)); % Shoud increase
-%         fprintf('Iter: %4i, rCost: %6.4f,\t dCost: %6.4e,\t  ELBO: %6.4e,\t dELBO: %6.4e,\t tau: %6.4e\n',...
-%             iter, rmse(iter)/(0.5*SST), dCost,...
-%             elbo(iter), dELBO, Etau);
+
         if ~strcmpi(verbose,'no')
             fprintf(' %16i | %16.4e | %16.4e | %16.4e | %16.4f | %16.4f | %16.4f |\n',...
                 iter, elbo(iter), dELBO, sqrt(1./Etau), 1-SSE/SST, time_tic_toc, time_cpu);
