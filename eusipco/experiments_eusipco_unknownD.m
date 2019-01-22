@@ -45,7 +45,7 @@ for i = 1:num_permutes
 %     else
         perm_idx = randperm(ndims(X));
         G_init = [];
-%     end
+    end
     final_permutation(i,:) = perm_idx;
     org_idx = 1:ndims(X);
     perm2org_idx = sum(bsxfun(@times,(org_idx == perm_idx')', 1:ndims(X)),2);
