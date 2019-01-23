@@ -77,7 +77,7 @@ else
     end
     
     % Last mode
-    ES = sqrt(norm(X(:),'fro')^2/length(E_lambda))*eye(D(end-1));
+    ES = sqrt(norm(X(:),'fro')^2/D(end-1))*eye(D(end-1));
     EV = orth(randn(N(end), D(end-1)));
     G{end} = ES*EV';
     
@@ -173,7 +173,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
         N_s = N(end);
         
         [P_S, H_S] = getPriorAndEntropy_tnorm(s_mu, s_var, logZhatOut, N_s, ...
-            E_log_lambda, E_lambda);
+            repmat(E_log_lambda,D(end-1),1) , repmat(E_lambda,D(end-1),1));
         
         ES = diag(s_mu);
         ESS = sum(s_mu.^2 + s_var);
