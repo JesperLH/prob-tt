@@ -18,7 +18,7 @@ D = [1,length(N)+1:-1:3, 1];
 D_est = D;
 
 [X_clean, G, ES, EV] = generateTensorTrain(N, D);
-X_clean = X_clean/sqrt(var(X(:)));
+X_clean = X_clean/sqrt(var(X_clean(:)));
 
 % All permutations
 all_permuations = perms(1:ndims(X));
