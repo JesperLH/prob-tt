@@ -76,7 +76,7 @@ else
     
 end
 
-Etau=tau_alpha0/tau_beta0*1/mean(X(:).^2);
+Etau=tau_alpha0/tau_beta0;%*1/mean(X(:).^2);
 
 %%
 %% Setup how information should be displayed.
@@ -124,7 +124,7 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
             % orthogonal
             [UU,SS,VV]=svd(F, 'econ');
             [f,V,lF]=hyperg(size(F,1),diag(SS),3);
-            assert(max(f)>eps, 'Subspace is pruned...')
+%             assert(max(f)>eps, 'Subspace is pruned...')
             
             % Get expected value of G{i} and the entropy of vMF
             G{i}=reshape(UU*diag(f)*VV', sG);
