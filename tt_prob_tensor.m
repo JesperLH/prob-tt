@@ -7,7 +7,7 @@ paramNames = {'conv_crit', 'maxiter', ...
     'model_V', 'fixed_V',...
     'model_G', 'fixed_G','verbose'};
 defaults = {1e-8, 100, ...
-    true, 5, 1e-3, 1e-3,...
+    true, 5, 1e-6, 1e-6,...
     true, 0,...
     true, 0,...
     true, 0,...
@@ -119,7 +119,7 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
             % Contract modes
             sG = size(G{i});
             x_con = contract_fixed_modes(X,G,i);
-            assert(sum(abs(x_con(:)))>0, 'No residual..')
+            assert(sum(abs(x_con(:)))>0, 'No residual.. Iteration %i', iter)
             
             % Update von-Mises-Fisher Distribution
             F=reshape(x_con, prod(sG(1:end-1)), sG(end))*Etau;
@@ -134,7 +134,7 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
             G{i}=reshape(UU*diag(f)*VV', sG);
             H_G(i)= lF-sum(sum(F(:).*G{i}(:)));  %#ok<AGROW>
             
-            assert(sum(abs(G{i}(:)))>0, 'An entire cart was turned off')
+            assert(sum(abs(G{i}(:)))>0, 'An entire cart was turned off, Iteration %i', iter)
         end
     end
     %% Update the last factor
@@ -220,7 +220,7 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
         end
         
         if abs(dELBO) > conv_crit
-           assert(dELBO>=0, 'ELBO DECREASED!')
+           assert(dELBO>=0, 'ELBO DECREASED! Iteration %i', iter)
         elseif dELBO < 0 
             warning('ELBO decreased, but was below convergence threshold')
         end
