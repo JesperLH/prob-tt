@@ -27,7 +27,7 @@ for d1 = 1:length(D_1mode)
         t0 = tic;
         for rep = 1:n_repeats
             try 
-                [G,S,V, tau, elbo] = tt_prob_tensor(X, [], D_est,'conv_crit',1e-6);
+                [G,S,V, tau, elbo] = tt_prob_tensor(X, [], D_est,'conv_crit',1e-6, 'verbose','no');
                 X_tt = constructTensorTrain(G);
             
                 final_elbo(d1,d2,rep) = elbo(end);
