@@ -19,8 +19,7 @@ all_permuations = perms(1:ndims(X_clean));
 all_permuations = all_permuations(end:-1:1,:); %Make sure the first one is 1:5
 num_permutes = size(all_permuations,1);
 
-%%
-num_noise_level = length(list_snrdb);
+
 %% Run experiments
 final_elbo = nan(num_permutes,num_repeats);
 final_rrmse = nan(num_permutes,num_repeats);
