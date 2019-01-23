@@ -21,9 +21,9 @@ D_est = D;
 X_clean = X_clean/sqrt(var(X_clean(:)));
 
 % All permutations
-all_permuations = perms(1:ndims(X));
+all_permuations = perms(1:ndims(X_clean));
 all_permuations = all_permuations(end:-1:1,:); %Make sure the first one is 1:5
-all_permuations = [1:ndims(X); all_permuations]; % add another 1:5
+all_permuations = [1:ndims(X_clean); all_permuations]; % add another 1:5
 num_permutes = size(all_permuations,1);
 
 
