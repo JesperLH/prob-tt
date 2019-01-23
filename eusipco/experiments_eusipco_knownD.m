@@ -11,9 +11,9 @@ rng(131462234)
 %snr_db = -5;
 list_snrdb = [-10:2.5:10];
 num_repeats = 5;
-maxiter = 7;
+maxiter = 50;
 
-N = 15:-1:11;
+N = 20:-1:16;
 D = [1,length(N)+1:-1:3, 1];
 D_est = D;
 

@@ -78,6 +78,10 @@ end
 
 Etau=tau_alpha0/tau_beta0;%*1/mean(X(:).^2);
 
+if sum(cellfun(@numel, G)) >= numel(X)
+    warning('The number of elements in G is larger than X. This does not provide compression of X and may lead to unexpected performance')
+end
+
 %%
 %% Setup how information should be displayed.
 if ~strcmpi(verbose,'no')
