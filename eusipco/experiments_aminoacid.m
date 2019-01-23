@@ -9,12 +9,16 @@ D_est = [1, [1,1]*3, 1];
 D_est = [1, 3, 3, 1];
 %D_est = [1, 5, 20, 1];
 
-n_repeats = 5;
+n_repeats = 100;
 best_model = [];
 final_elbo = zeros(n_repeats,1)*-inf;
 
 for rep = 1:n_repeats
-    [G,S,V, tau, elbo] = tt_prob_tensor(X, [], D_est,'conv_crit',1e-6);
+    try
+        [G,S,V, tau, elbo] = tt_prob_tensor(X, [], D_est,'conv_crit',1e-6);
+    catch
+%         [G,S,V, tau, elbo] = tt_prob_tensor(X, [], D_est,'conv_crit',1e-6);
+    end
     final_elbo(rep) = elbo(end);
     
     [~, idx] = max(final_elbo);
