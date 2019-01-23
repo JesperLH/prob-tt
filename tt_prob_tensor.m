@@ -7,7 +7,7 @@ paramNames = {'conv_crit', 'maxiter', ...
     'model_V', 'fixed_V',...
     'model_G', 'fixed_G','verbose'};
 defaults = {1e-8, 100, ...
-    true, 0, 1e-3, 1e-3,...
+    true, 5, 1e-3, 1e-3,...
     true, 0,...
     true, 0,...
     true, 0,...
@@ -36,6 +36,7 @@ elseif length(D) == ndims(X)+1
 end
 
 assert(all(D(2:end-1)<=N(1:end-1)), 'Model order cannot be higher than mode observations.')
+assert(D(end-1) <= N(end), 'Model order in last mode cannot be higher than mode end or end-1')
 %% Initialize
 SST = sum(sum(X(:).^2));
 prior_s = ones(D(end-1),1)*sqrt(SST/numel(X));
@@ -82,7 +83,7 @@ Etau=tau_alpha0/tau_beta0*1/mean(X(:).^2);
 if ~strcmpi(verbose,'no')
     disp([' '])
     disp(['Probabilistic Tensor Train'])        %TODO: Better information about what is running..
-    disp(['A D=' strcat('(',strjoin(strsplit(num2str([D(:); 1]')),', '), ')') ' component model will be fitted']);
+    disp(['A D=' strcat('(',strjoin(strsplit(num2str(D(:)')),', '), ')') ' component model will be fitted']);
     disp([' ']);
     dheader = sprintf(' %16s | %16s | %16s | %16s | %16s | %16s | %16s |','Iteration', ...
         'Cost', 'rel. \Delta cost', 'Noise (s.d.)', 'Var. Expl.', 'Time (sec.)', 'Time CPU (sec.)');
@@ -102,14 +103,14 @@ iter = 0;
 dELBO = inf;
 
 
-while iter < max_iter && dELBO > conv_crit
+while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
     iter = iter+1;
     time_tic_toc = tic;
     time_cpu = cputime;
     %% Update each factor...
     if iter == 1 || model_G
-        %for i = 1:ndims(X)-1
-        for i = randperm(ndims(X)-1)
+        for i = 1:ndims(X)-1
+%         for i = randperm(ndims(X)-1)
             
             % Contract modes
             sG = size(G{i});
