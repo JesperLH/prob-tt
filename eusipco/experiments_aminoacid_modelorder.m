@@ -13,7 +13,7 @@ X = X/scale_x;
 
 D_1mode = 2:max(size(X,1));
 D_2mode = 2:2:min(size(X,2), size(X,3));
-n_repeats = 5;
+n_repeats = 10;
 constr = [0,0,0]; %Unconstrained
 
 final_elbo = zeros(length(D_1mode), length(D_2mode), n_repeats)*nan;
