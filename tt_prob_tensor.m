@@ -3,11 +3,13 @@ function [G, ES, EV, Etau, elbo] = tt_prob_tensor(X,G, D, varargin)
 %% Read input and Setup Parameters
 paramNames = {'conv_crit', 'maxiter', ...
     'model_tau', 'fixed_tau', 'tau_a0', 'tau_b0',...
+    'model_lambda', 'fixed_lambda', 'lambda_a0', 'lambda_b0',...
     'model_S', 'fixed_S',...
     'model_V', 'fixed_V',...
     'model_G', 'fixed_G','verbose'};
 defaults = {1e-8, 100, ...
-    true, 5, 1e-6, 1e-6,...
+    true, 5, 1e-6, 1e-6,... 
+    true, 0, 1e-6, 1e-6,...
     true, 0,...
     true, 0,...
     true, 0,...
@@ -15,45 +17,56 @@ defaults = {1e-8, 100, ...
 % Initialize variables to default value or value given in varargin
 [conv_crit, max_iter, ...
     model_tau, fixed_tau, tau_alpha0, tau_beta0,...
+    model_lambda, fixed_lambda, lambda_alpha0, lambda_beta0,...
     model_S, fixed_S, model_V, fixed_V, model_G, fixed_G, verbose]...
     = internal.stats.parseArgs(paramNames, defaults, varargin{:});
 
 %% Check D is valid
 N = size(X);
-if length(D) == ndims(X)
-    if D(1) == 1
-        D = [D,1];
-    elseif D(end) == 1
-        D = [1,D];
-    else
-        error('Input error: specified model order not understood')
+if isempty(G)
+    if length(D) == ndims(X)
+        if D(1) == 1
+            D = [D,1];
+        elseif D(end) == 1
+            D = [1,D];
+        else
+            error('Input error: specified model order not understood')
+        end
+        
+    elseif length(D) == ndims(X)-1
+        D = [1,D,1];
+    elseif length(D) == ndims(X)+1
+        assert(D(1)==1 && D(end)==1, 'Input error, D(1) and D(end) must be 1')
     end
-    
-elseif length(D) == ndims(X)-1
-    D = [1,D,1];
-elseif length(D) == ndims(X)+1
-    assert(D(1)==1 && D(end)==1, 'Input error, D(1) and D(end) must be 1')
-end
-
-assert(all(D(2:end-1)<=N(1:end-1)), 'Model order cannot be higher than mode observations.')
-assert(D(end-1) <= N(end), 'Model order in last mode cannot be higher than mode end or end-1')
-%% Initialize
-SST = sum(sum(X(:).^2));
-prior_s = ones(D(end-1),1)*sqrt(SST/numel(X));
-s_prior_log_value = ones(D(end-1),1)*0;
-s_lb = zeros(D(end-1),1);
-s_ub = ones(D(end-1),1)*inf;
-
-
-if ~isempty(G)
+    assert(all(D(2:end-1)<=N(1:end-1)), 'Model order cannot be higher than mode observations.')
+    assert(D(end-1) <= N(end), 'Model order in last mode cannot be higher than mode end or end-1')
+else
     G_sizes = cellfun(@size, G,  'UniformOutput', false);
     D = ones(ndims(X)+1,1);
     for d = 1:ndims(X)-1
         D(d+1) = G_sizes{d}(end);
     end
+end
+
+
+%% Initialize
+SST = sum(sum(X(:).^2));
+E_lambda = lambda_alpha0/lambda_beta0;%sqrt(SST/numel(X))/D(end-1);
+E_log_lambda = log(E_lambda);
+s_lb = zeros(D(end-1),1);
+s_ub = ones(D(end-1),1)*inf;
+
+
+if ~isempty(G)
+%     G_sizes = cellfun(@size, G,  'UniformOutput', false);
+%     D = ones(ndims(X)+1,1);
+%     for d = 1:ndims(X)-1
+%         D(d+1) = G_sizes{d}(end);
+%     end
     
+    G{1} = squeeze(G{1});
     EV = G{end};
-    ES = eye(size(G{end},1));
+    ES = eye(size(G{end},1))*sqrt(norm(X(:),'fro')^2/D(end-1));
 else
     
     G=cell(length(N),1);
@@ -64,15 +77,9 @@ else
     end
     
     % Last mode
-    ES = diag(prior_s);
-    ES = sqrt(norm(X(:),'fro')^2/length(prior_s))*eye(length(prior_s));
-    %ES = diag(rand(D(end-1),1)*2+0.5);
+    ES = sqrt(norm(X(:),'fro')^2/length(E_lambda))*eye(D(end-1));
     EV = orth(randn(N(end), D(end-1)));
     G{end} = ES*EV';
-    
-%     for d = 1:length(N)
-%         G{d} = G{d} + randn(size(G{d}))*1e-2*sqrt(var(G{d}(:)));
-%     end
     
 end
 
@@ -105,9 +112,9 @@ total_cputime = cputime;
 %% Run algo
 iter = 0;
 dELBO = inf;
+SSE =inf;
 
-
-while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
+while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fixed_tau
     iter = iter+1;
     time_tic_toc = tic;
     time_cpu = cputime;
@@ -157,7 +164,7 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
     % Update S
     if iter == 1 || model_S
         
-        ss_sig2 = 1./(1*Etau + prior_s);
+        ss_sig2 = 1./(1*Etau + E_lambda)*ones(size(EV,2),1);
         ss_mu = ss_sig2.*sum(EV'.*x_con, 2)*Etau;
                 
         [logZhatOut, ~ , s_mu, s_var ] = ...
@@ -166,11 +173,24 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
         N_s = N(end);
         
         [P_S, H_S] = getPriorAndEntropy_tnorm(s_mu, s_var, logZhatOut, N_s, ...
-            s_prior_log_value, prior_s);
+            E_log_lambda, E_lambda);
         
         ES = diag(s_mu);
         ESS = sum(s_mu.^2 + s_var);
     end
+    if model_lambda && iter > fixed_lambda
+        est_lambda_alpha = lambda_alpha0 + size(EV,1)/2;
+        est_lambda_beta = lambda_beta0 + ESS/2;
+    else
+        est_lambda_alpha = lambda_alpha0;
+        est_lambda_beta = lambda_beta0;
+    end
+    E_lambda = est_lambda_alpha/est_lambda_beta;
+    E_log_lambda = psi(est_lambda_alpha)-log(est_lambda_beta);
+    H_lambda = gamma_entropy(est_lambda_alpha, est_lambda_beta);
+    P_lambda = -gammaln(lambda_alpha0)+lambda_alpha0*log(lambda_beta0)...
+        +(lambda_alpha0-1)*E_log_lambda - lambda_beta0*E_lambda;
+    
     G{end} = ES*EV';
     
     %% Update the noise
@@ -200,7 +220,8 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
         +P_tau+H_tau...
         +sum(H_G)... %Note, P_G is 0, when P(G) is a uniform prior on the sphere.
         +P_V+H_V...
-        +P_S+sum(H_S);
+        +P_S+sum(H_S)...
+        +P_lambda+H_lambda;
   
     rmse(iter) = 0.5*SSE/numel(X);
     %% Display
@@ -233,6 +254,9 @@ while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
    
     
     
+end
+if ismatrix(G{1})
+    G{1} = permute(G{1}, [3,1,2]);
 end
 
 if abs((2*rmse(iter)/SST)-1) < eps
