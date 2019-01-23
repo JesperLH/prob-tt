@@ -8,7 +8,7 @@ rng(131462234)
 %% Setup problem and generate data
 %snr_db = -5;
 list_snrdb = [-10:2.5:10];
-num_repeats = 5;
+num_repeats = 10;
 maxiter = 50;
 
 N = 20:-1:16;

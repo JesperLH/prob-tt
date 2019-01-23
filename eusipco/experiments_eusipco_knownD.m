@@ -10,7 +10,7 @@ rng(131462234)
 %% Setup problem and generate data
 %snr_db = -5;
 list_snrdb = [-10:2.5:10];
-num_repeats = 5;
+num_repeats = 10;
 maxiter = 50;
 
 N = 20:-1:16;
@@ -76,7 +76,6 @@ for snr = 1:num_noise_level
                 end
                 X_recon = constructTensorTrain(G_est);
                 X_recon = permute(X_recon, perm2org_idx);
-%                 fprintf('Reconstruction error is %6.4f\n',norm(X(:)-X_recon(:),'fro')^2/norm(X(:),'fro')^2)
 
                 final_rrmse(i,j,snr) = norm(X(:)-X_recon(:),'fro')^2/norm(X(:),'fro')^2;
                 final_elbo(i,j,snr) = elbo(end);
