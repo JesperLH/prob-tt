@@ -11,8 +11,20 @@ X=permute(X,permute_order);
 
 X = X/scale_x;
 
-D_1mode = 2:max(size(X,1));
-D_2mode = 2:2:min(size(X,2), size(X,3));
+if size(X,1) == 201
+    D_1mode = [2:9, 10:5:25, 30:10:size(X,1)];
+elseif size(X,1) == 61
+    D_1mode = [2:9, 10:2:size(X,1)];
+else
+    D_1mode = 2:max(size(X,1));
+end
+
+D2 = min(size(X,2), size(X,3));
+if D2 == 61
+    D_2mode = [2:9, 10:2:28, 30:5:D2];
+else
+    D_2mode = 2:D2;
+end
 n_repeats = 10;
 constr = [0,0,0]; %Unconstrained
 
