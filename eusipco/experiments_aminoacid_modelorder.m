@@ -12,16 +12,16 @@ X=permute(X,permute_order);
 X = X/scale_x;
 
 if size(X,1) == 201
-    D_1mode = [2:9, 10:5:25, 30:10:size(X,1)];
+    D_1mode = [2:29, 30:5:45, 50:10:size(X,1)];
 elseif size(X,1) == 61
-    D_1mode = [2:9, 10:2:size(X,1)];
+    D_1mode = [2:29, 30:2:size(X,1)];
 else
     D_1mode = 2:max(size(X,1));
 end
 
 D2 = min(size(X,2), size(X,3));
 if D2 == 61
-    D_2mode = [2:9, 10:2:28, 30:5:D2];
+    D_2mode = [2:29, 30:2:D2];
 else
     D_2mode = 2:D2;
 end
@@ -49,8 +49,8 @@ for d1 = 1:length(D_1mode)
                 [~,A_clean] = evalc('parafac(constructTensorTrain(G), 3, [], constr)');
                 [avg_est_clean, idx_clean] = optimal_component_match(abs(corr(A_clean{find(size(X)==5)},y)));
                 final_cp(d1,d2,rep) = avg_est_clean;
-            catch
-               warning('Something did not go as expected..')
+            catch e
+               warning('Something did not go as expected.. Error was %s', e.message)
             end
             
         end
