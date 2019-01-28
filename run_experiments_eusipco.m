@@ -4,7 +4,7 @@ addpath(genpath('../ncptensor'))
 addpath(genpath('../tools'))
 
 elapsed_time = zeros(6,1)*nan;
-for i = 3:6
+for i = 5:6
     t0 = tic;
     switch i
         case 1
