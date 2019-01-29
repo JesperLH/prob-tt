@@ -77,6 +77,7 @@ for snr_i = 1:length(snr_list)
     %% Calculate tt_prob
     G_best = [];
     elbo_best = -inf;
+    found_a_solution = false;
     fprintf('\tRunning Probabilistic TT-toolbox\n')
     for j = 1:num_repeats
         fprintf('\t\t Repeat %i of %i ...', j, num_repeats); t00 = tic;
@@ -88,18 +89,21 @@ for snr_i = 1:length(snr_list)
             if ~isempty(elbo) && elbo(end) > elbo_best
                 elbo_best = elbo(end);
                 G_best = G_est;
+                found_a_solution = true;
             end
         catch e
             warning(sprintf('Something went wrong... Error message was:\n%s\n',e.message))
         end
         toc(t00);
     end
-    [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, G_true);
-    all_rmse_noise(snr_i, method_i) = e_rmse;
-    all_rmse_true(snr_i, method_i) = e_rmse_clean;
-    all_elbo(snr_i, method_i) = elbo_best;
-    all_tt_comp(snr_i, method_i) = e_tt_comp;
-    all_numel(snr_i, method_i) = e_numel;
+    if found_a_solution
+        [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, G_true);
+        all_rmse_noise(snr_i, method_i) = e_rmse;
+        all_rmse_true(snr_i, method_i) = e_rmse_clean;
+        all_elbo(snr_i, method_i) = elbo_best;
+        all_tt_comp(snr_i, method_i) = e_tt_comp;
+        all_numel(snr_i, method_i) = e_numel;
+    end
     method_i = method_i +1;
     
     
