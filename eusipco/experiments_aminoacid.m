@@ -6,8 +6,8 @@ X = X/scale_x;
 
 %Best solution
 D_est = [1, 5, 5, 1];
-perm_idx = [2,1,3];
-reverse_perm_idx = [2,1,3];
+perm_idx = [2,3,1];
+reverse_perm_idx = [3,1,2];
 
 %Worst solution
 % D_est = [1, 3, 5, 1];
@@ -42,11 +42,6 @@ X_recon = permute(constructTensorTrain(G), reverse_perm_idx);
 
 plotDataCleanDataAndDiff(X*scale_x, X_recon*scale_x)
 
-% Get worst solution
-X_recon_worst=getWorstSolution(X, n_repeats);
-
-plotDataCleanDataAndDiffBestWorst(X*scale_x, X_recon*scale_x, X_recon_worst*scale_x)
-
 
 constr = [0,0,0]; %Unconstrained
 
@@ -62,6 +57,13 @@ constr = [0,0,0]; %Unconstrained
 [avg_est_clean, idx_clean] = optimal_component_match(abs(corr(A_clean{1},y)));
 
 avg_est_raw, avg_est_nonneg, avg_est_clean
+
+% Get worst solution
+%X_recon_worst=getWorstSolution(X, n_repeats);
+%plotDataCleanDataAndDiffBestWorst(X*scale_x, X_recon*scale_x, X_recon_worst*scale_x)
+plotDataCleanDataAndDiffBestWorst(X*scale_x, X_recon*scale_x, nmodel(A_nonneg)*scale_x)
+
+
 
 end
 
