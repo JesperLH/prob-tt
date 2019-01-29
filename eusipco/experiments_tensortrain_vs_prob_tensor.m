@@ -11,7 +11,7 @@ rng(131462234)
 num_repeats = 10;
 maxiter = 50;
 tt_threshold = logspace(-16,-1,16); % Vary threshold...)
-snr_list = -10:2.5:10;
+snr_list = [-20:5:20, 30:10:100];
 
 N = 20:-1:16;
 D = [1,length(N)+1:-1:3, 1];
@@ -48,7 +48,8 @@ for snr_i = 1:length(snr_list)
         fprintf('\t\t epsilon = %3.2e .... ', tt_threshold(t)); t00 = tic;
         tt = tt_tensor(X, tt_threshold(t));
         cr= tt.core ; ps= tt.ps ;
-        for k=1:5
+        core=cell(ndims(X),1);
+        for k=1:ndims(X)
             core{k} =cr(ps(k): ps(k +1) -1); %#ok<SAGROW>
             core{k} = reshape(core{k}, tt.r(k), tt.n(k), tt.r(k+1)); %#ok<SAGROW>
         end
@@ -69,7 +70,7 @@ for snr_i = 1:length(snr_list)
     all_rmse_true(snr_i, method_i) = e_rmse_clean;
     all_tt_comp(snr_i, method_i) = e_tt_comp;
     all_numel(snr_i, method_i) = e_numel;
-%     method_i = method_i +1;
+    method_i = method_i +1;
     toc(t00);
     
     
