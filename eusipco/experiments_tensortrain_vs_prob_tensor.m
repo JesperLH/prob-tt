@@ -1,14 +1,17 @@
 function experiments_tensortrain_vs_prob_tensor()
 %% Tensor Train Experiments
 addpath('./requiredfunctions/')
+addpath(genpath('./'))
+addpath(genpath('../ncptensor'))
+addpath(genpath('../tools'))
 addpath(strjoin(strcat('../thirdparty-matlab/oseledets-TT-Toolbox-8332a6c/',{'','core', 'exp', 'cross', 'fmex', 'misc','solve'}),';'))
 
 rng(131462234)
 %% Setup problem and generate data
-num_repeats = 2;
-maxiter = 2;
-tt_threshold = logspace(-16,-1,2); % Vary threshold...)
-snr_list = [-10,0,10];%-10:2.5:10;
+num_repeats = 10;
+maxiter = 50;
+tt_threshold = logspace(-16,-1,16); % Vary threshold...)
+snr_list = -10:2.5:10;
 
 N = 20:-1:16;
 D = [1,length(N)+1:-1:3, 1];
