@@ -11,7 +11,7 @@ rng(131462234)
 num_repeats = 10;
 maxiter = 50;
 tt_threshold = logspace(-16,-1,16); % Vary threshold...)
-snr_list = [-20:5:20, 30:10:100];
+snr_list = [-20:2.5:20, 30:10:100];
 
 N = 20:-1:16;
 D = [1,length(N)+1:-1:3, 1];
