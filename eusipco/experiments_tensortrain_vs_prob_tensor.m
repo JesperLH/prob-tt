@@ -27,7 +27,7 @@ n_methods = length(tt_threshold)... % Oseledets TT
     +1 +2; % One fixed-order TT and two tt_prob (true and random init)
 
 name_methods = strcat('TT (\epsilon=',strsplit(strtrim(sprintf('%2.0e ',tt_threshold)),' '),')');
-name_methods = {name_methods{:}, 'TT (fixed)', 'Prob. TT (rand)', 'Prob. TT (true)'};
+name_methods = {name_methods{:}, 'TT (fixed)', 'Prob. TT (rand)'};
 
 %%
 
@@ -75,38 +75,33 @@ for snr_i = 1:length(snr_list)
     
     
     %% Calculate tt_prob
-    for init_random = [true, false]
-        G_best = [];
-        elbo_best = -inf;
-        fprintf('\tRunning Probabilistic TT-toolbox\n')
-        for j = 1:num_repeats
-            fprintf('\t\t Repeat %i of %i ...', j, num_repeats); t00 = tic;
-            try
-                if init_random
-                    [G_est, S_est, V_est, tau_est, elbo] = tt_prob_tensor(X, [], D,...
-                        'maxiter',maxiter,'verbose','no');
-                else
-                    [G_est, S_est, V_est, tau_est, elbo] = tt_prob_tensor(X, G_true, [],...
-                    'maxiter',maxiter,'verbose','no');
-                end
+    G_best = [];
+    elbo_best = -inf;
+    fprintf('\tRunning Probabilistic TT-toolbox\n')
+    for j = 1:num_repeats
+        fprintf('\t\t Repeat %i of %i ...', j, num_repeats); t00 = tic;
+        try
+            elbo=[];
+            [G_est, S_est, V_est, tau_est, elbo] = tt_prob_tensor(X, [], D,...
+                'maxiter',maxiter,'verbose','no');
 
-                if elbo(end) > elbo_best
-                    elbo_best = elbo(end);
-                    G_best = G_est;
-                end
-            catch e
-                warning(sprintf('Something went wrong... Error message was:\n%s\n',e.message))
+            if ~isempty(elbo) && elbo(end) > elbo_best
+                elbo_best = elbo(end);
+                G_best = G_est;
             end
-            toc(t00);
+        catch e
+            warning(sprintf('Something went wrong... Error message was:\n%s\n',e.message))
         end
-        [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, G_true);
-        all_rmse_noise(snr_i, method_i) = e_rmse;
-        all_rmse_true(snr_i, method_i) = e_rmse_clean;
-        all_elbo(snr_i, method_i) = elbo_best;
-        all_tt_comp(snr_i, method_i) = e_tt_comp;
-        all_numel(snr_i, method_i) = e_numel;
-        method_i = method_i +1;
+        toc(t00);
     end
+    [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, G_true);
+    all_rmse_noise(snr_i, method_i) = e_rmse;
+    all_rmse_true(snr_i, method_i) = e_rmse_clean;
+    all_elbo(snr_i, method_i) = elbo_best;
+    all_tt_comp(snr_i, method_i) = e_tt_comp;
+    all_numel(snr_i, method_i) = e_numel;
+    method_i = method_i +1;
+    
     
 end
 
