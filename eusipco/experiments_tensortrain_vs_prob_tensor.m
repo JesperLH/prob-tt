@@ -24,8 +24,7 @@ X_clean = X_clean/sqrt(var(X_clean(:)));
 
 
 n_methods = length(tt_threshold)... % Oseledets TT
-    +1 +2; % One fixed-order TT and two tt_prob (true and random init)
-
+    +1 +1; % One fixed-order TT and prob_tt with random init
 name_methods = strcat('TT (\epsilon=',strsplit(strtrim(sprintf('%2.0e ',tt_threshold)),' '),')');
 name_methods = {name_methods{:}, 'TT (fixed)', 'Prob. TT (rand)'};
 
