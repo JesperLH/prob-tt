@@ -3,6 +3,8 @@
 clear
 is_known = false;
 is_rmse = true;
+max_sd = zeros(4,1);
+i_max_sd = 1;
 
 for is_known = [true, false]
     for is_rmse = [true, false]
@@ -31,18 +33,24 @@ for is_known = [true, false]
             end
             mu = nanmean(x,2);
             sd = sqrt(nanvar(x,[],2));
+            if max(sd) > max_sd(i_max_sd)
+                max_sd(i_max_sd) = max(sd);
+            end
             ci = [mu-10*sd, mu+10*sd]; % Note, there is almost no variation over repeats...
             
             %plotCI(1:n_perms, x_best, ci, snr_colors(i_snr,:), snr_colors(i_snr,:))
             plotCI(1:n_perms, mu, ci, snr_colors(i_snr,:), snr_colors(i_snr,:))
         end
+        i_max_sd = i_max_sd +1;
         % Shrink figure and add x-axis
         pos = get(gca,'position');
         set(gca,'Position',pos.*[1,2.8,1,0.7])
         xlim([0,n_perms+0.5])
-        xticks([1:5:n_perms])
+        
+        i_xticks = [1:10:111, n_perms];
+        xticks(i_xticks)
         str_perms = strcat('(',strrep(string(num2str(all_permuations)),'  ',','),')');
-        xticklabels(str_perms(1:5:n_perms))
+        xticklabels(str_perms(i_xticks))
         xtickangle(90)
         xlabel('All possible permutations')
         
@@ -72,7 +80,18 @@ for is_known = [true, false]
         
         print(strcat('./eusipco/results/synthtensor_',save_pre,'_',save_ext), '-dpng')
         print(strcat('./eusipco/results/synthtensor_',save_pre,'_',save_ext), '-depsc')
-        
+       
+        %%
+        1+1;
+        if is_rmse
+            disp('Best permutation is: ')
+            x = squeeze(nanmin(final_rrmse(idx_sort,:,:),[],2));
+            [~, idx] = min(x)
+        else
+            disp('Best permutation is: ')
+            x = squeeze(nanmax(final_elbo(idx_sort,:,:),[],2));
+            [~, idx] = max(x)
+        end
     end
 end
 
