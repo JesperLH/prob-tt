@@ -10,7 +10,7 @@ rng(131462234)
 %% Setup problem and generate data
 num_repeats = 10;
 maxiter = 50;
-tt_threshold = logspace(-16,-1,16); % Vary threshold...)
+tt_threshold = logspace(-4,-1,16); % Vary threshold...)
 snr_list = [-20:2.5:20, 30:10:100];
 
 N = 20:-1:16;
