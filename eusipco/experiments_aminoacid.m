@@ -15,7 +15,7 @@ reverse_perm_idx = [3,1,2];
 % reverse_perm_idx = [3,1,2];
 
 
-n_repeats = 100;
+n_repeats = 50;
 best_model = [];
 final_elbo = zeros(n_repeats,1)*-inf;
 
@@ -225,37 +225,45 @@ for j = 1:5
         if j == 1
             title(sprintf('Sample %i', i))
         end
-        xlabel('Excitation')
-        ylabel('Emmission')
         
+        if j == 5
+            xlabel('Excitation')
+            ylabel('Emmission')
 
-        v = get(gca,'view');
 
-        xh = get(gca,'XLabel'); % Handle of the x label
-        set(xh, 'Units', 'Normalized')
-        pos = get(xh, 'Position');
-        set(xh, 'Position',[0.53, 0.01,0],'Rotation',v(2)-14)
-        yh = get(gca,'YLabel'); % Handle of the y label
-        set(yh, 'Units', 'Normalized')
-        set(yh, 'Position',[0.425,-0.03, 0],'Rotation',v(1)+14)
+            v = get(gca,'view');
+
+            xh = get(gca,'XLabel'); % Handle of the x label
+            set(xh, 'Units', 'Normalized')
+            pos = get(xh, 'Position');
+            set(xh, 'Position',[0.53, 0.01,0],'Rotation',v(2)-14)
+            yh = get(gca,'YLabel'); % Handle of the y label
+            set(yh, 'Units', 'Normalized')
+            set(yh, 'Position',[0.425,-0.03, 0],'Rotation',v(1)+14)
+        end
         
-        if i == 1
-            zlabel('Intensity')
-            zh = get(gca,'ZLabel'); % Handle of the z label
-%             set(zh, 'Units', 'Normalized')
-%             set(zh, 'Position',[0.35,0.03, 0])%,'Rotation',v(1)-9)
+        if i == 1 
+            if any(j == [1,2,4])
+                zlabel('Intensity')
+                zh = get(gca,'ZLabel'); % Handle of the z label
+    %             set(zh, 'Units', 'Normalized')
+    %             set(zh, 'Position',[0.35,0.03, 0])%,'Rotation',v(1)-9)
+            else 
+                zlabel('\Delta(Intensity)')
+            end
         end
         
         if j>1
+            no_label_offset = 0.02;
             pos = get(gca, 'Position');
             if j == 2
-                pos(2) = 0.67;%59;
+                pos(2) = 0.67+no_label_offset;%59;
             elseif j==3
-                pos(2) = 0.53;
+                pos(2) = 0.53+no_label_offset*2;
             elseif j==4
-                pos(2) = 0.39;
+                pos(2) = 0.39+no_label_offset*3;
             elseif j==5
-                pos(2) = 0.25;
+                pos(2) = 0.25+no_label_offset*4;
             end
             set(gca,'Position',pos)
         end
