@@ -10,7 +10,7 @@ rng(131462234)
 %% Setup problem and generate data
 num_repeats = 10;
 maxiter = 50;
-tt_threshold = logspace(-4,-1,16); % Vary threshold...)
+tt_threshold = logspace(-4,-1,20); % Vary threshold...)
 snr_list = [-20:2.5:20, 30:10:100];
 
 N = 20:-1:16;
@@ -140,7 +140,7 @@ for snr_i = 1:length(snr_list)
         toc(t00);
     end
     if found_a_solution
-        [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, G_true);
+        [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, []);
         all_rmse_noise(snr_i, method_i) = e_rmse;
         all_rmse_true(snr_i, method_i) = e_rmse_clean;
         all_elbo(snr_i, method_i) = elbo_best;
