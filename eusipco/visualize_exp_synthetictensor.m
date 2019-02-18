@@ -5,6 +5,7 @@ is_known = false;
 is_rmse = true;
 max_sd = zeros(4,1);
 i_max_sd = 1;
+font_size = 12;
 
 for is_known = [true, false]
     for is_rmse = [true, false]
@@ -52,29 +53,29 @@ for is_known = [true, false]
         str_perms = strcat('(',strrep(string(num2str(all_permuations)),'  ',','),')');
         xticklabels(str_perms(i_xticks))
         xtickangle(90)
-        xlabel('All possible permutations')
+        xlabel('All possible permutations','Fontsize',font_size)
         
         %Setup colorbar
         cbh = colorbar; colormap(snr_colors);
         c_min = min(snr_colors(:,1));
         c_max = max(snr_colors(:,1));
         caxis([c_min,c_max])
-        set(cbh, 'Ticks', [c_min, c_max], 'TickLabels',{'Low SNR', 'High SNR'})
+        set(cbh, 'Ticks', [c_min, c_max], 'TickLabels',{'Low SNR', 'High SNR'},'Fontsize',font_size-1)
         
         % Fix ylabel and title
         if is_rmse
-            ylabel('Relative RMSE')
+            ylabel('Relative RMSE','Fontsize',font_size)
             save_ext = 'rmse';
         else
-            ylabel('Evidence Lowerbound (ELBO)')
+            ylabel('Evidence Lowerbound','Fontsize',font_size)
             save_ext = 'elbo';
         end
         
         if is_known
-            title('Known model order')
+            title('Known model order','Fontsize',font_size+2)
             save_pre = 'known';
         else
-            title('Unknown model order')
+            title('Unknown model order','Fontsize',font_size+2)
             save_pre = 'unknown';
         end
         
