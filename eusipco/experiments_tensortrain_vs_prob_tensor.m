@@ -25,8 +25,8 @@ X_clean = X_clean/sqrt(var(X_clean(:)));
 
 n_methods = length(tt_threshold)... % Oseledets TT
     +1 +1; % One fixed-order TT and prob_tt with random init
-name_methods = strcat('TT (\epsilon=',strsplit(strtrim(sprintf('%2.0e ',tt_threshold)),' '),')');
-name_methods = {name_methods{:}, 'TT (fixed)', 'Prob. TT (rand)'};
+name_methods = strcat('TTD (\epsilon=',strsplit(strtrim(sprintf('%2.0e ',tt_threshold)),' '),')');
+name_methods = {name_methods{:}, 'TTD (fixed, true)', 'TTD (fixed)', 'PTTD (rand,true)', 'PTTD (rand)'};
 
 %%
 
@@ -73,8 +73,18 @@ for snr_i = 1:length(snr_list)
     method_i = method_i +1;
     toc(t00);
     
+    fprintf('\tRunning Oseledets TT-toolbox with fixed rank. ...'); t00 = tic;
+    D_est = D; D_est(2:end-1) = D_est(2:end-1)*2;
+    G_est = tt_tensor_fixed_rank(X,D_est);
+    [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_est, []);
+    all_rmse_noise(snr_i, method_i) = e_rmse;
+    all_rmse_true(snr_i, method_i) = e_rmse_clean;
+    all_tt_comp(snr_i, method_i) = e_tt_comp;
+    all_numel(snr_i, method_i) = e_numel;
+    method_i = method_i +1;
+    toc(t00);
     
-    %% Calculate tt_prob
+    %% Calculate tt_prob with true model oder
     G_best = [];
     elbo_best = -inf;
     found_a_solution = false;
@@ -84,6 +94,39 @@ for snr_i = 1:length(snr_list)
         try
             elbo=[];
             [G_est, S_est, V_est, tau_est, elbo] = tt_prob_tensor(X, [], D,...
+                'maxiter',maxiter,'verbose','no');
+
+            if ~isempty(elbo) && elbo(end) > elbo_best
+                elbo_best = elbo(end);
+                G_best = G_est;
+                found_a_solution = true;
+            end
+        catch e
+            warning(sprintf('Something went wrong... Error message was:\n%s\n',e.message))
+        end
+        toc(t00);
+    end
+    if found_a_solution
+        [e_rmse, e_rmse_clean, e_numel, e_tt_comp] = calculateErrorStuff(X, X_clean, G_best, G_true);
+        all_rmse_noise(snr_i, method_i) = e_rmse;
+        all_rmse_true(snr_i, method_i) = e_rmse_clean;
+        all_elbo(snr_i, method_i) = elbo_best;
+        all_tt_comp(snr_i, method_i) = e_tt_comp;
+        all_numel(snr_i, method_i) = e_numel;
+    end
+    method_i = method_i +1;
+    
+    %% Calculate tt_prob with (true model order)*2
+    D_est = D; D_est(2:end-1) = D_est(2:end-1)*2;
+    G_best = [];
+    elbo_best = -inf;
+    found_a_solution = false;
+    fprintf('\tRunning Probabilistic TT-toolbox\n')
+    for j = 1:num_repeats
+        fprintf('\t\t Repeat %i of %i ...', j, num_repeats); t00 = tic;
+        try
+            elbo=[];
+            [G_est, S_est, V_est, tau_est, elbo] = tt_prob_tensor(X, [], D_est,...
                 'maxiter',maxiter,'verbose','no');
 
             if ~isempty(elbo) && elbo(end) > elbo_best
