@@ -1,6 +1,6 @@
 %%
 load('C:\Users\jehi\Coding\prob-tt\eusipco\synthetic_tensortrain_vs_probtt.mat')
-
+font_size=12
 %%
 line_colors = ones(length(name_methods),3).*(1-(0.3+0.7*(length(name_methods):-1:1)/length(name_methods)))';
 line_colors(end-3:end,:) = [0.9,0,0; 0.9,0,0; 0, 0.1, 1; 0, 0.1, 1];
@@ -44,20 +44,26 @@ for i = 1:3
     hold off
     if i == 3
         %pass
-        ylabel('Elements in the TensorTrain','Fontsize',font_size)
-        ylim([0,nanmax(all_numel(:))])
+        set(gca,'YScale','log')
+        ylabel('Elements in G','Fontsize',font_size)
+        ylim([0,nanmax(all_numel(:))*2])
     else
         set(gca,'YScale','log')
-        ylabel('log(RMSE)','Fontsize',font_size)
+        ylabel('RMSE','Fontsize',font_size)
     end
     set(gca,'XTick',1:2:length(snr_list), 'XTickLabel',snr_list(1:2:end))
     xlabel('Signal to noise ratio (SNR) in dB','Fontsize',font_size)
     if any(i == [2,3])
-        i_leg = [1,16,length(name_methods)-3:length(name_methods)];
-        legend([h_plot{i_leg}], name_methods(i_leg),'Location','southwest','Fontsize',font_size-2)
+        i_leg = [1,length(name_methods)-4:length(name_methods)];
+        if i == 2
+            legend([h_plot{i_leg}], name_methods(i_leg),'Location','southwest','Fontsize',font_size-2)
+        else
+            legend([h_plot{i_leg}], name_methods(i_leg),'Location','northwest','Fontsize',font_size-2)
+        end
     end
     
     axis tight
+    
     if i == 1
        print('./eusipco/results/probTTvsOseTT_noise','-dpng')
        print('./eusipco/results/probTTvsOseTT_noise','-depsc') 
@@ -65,6 +71,7 @@ for i = 1:3
        print('./eusipco/results/probTTvsOseTT_nonoise','-dpng')
        print('./eusipco/results/probTTvsOseTT_nonoise','-depsc')
     elseif i == 3
+        
        print('./eusipco/results/probTTvsOseTT_numel','-dpng')
        print('./eusipco/results/probTTvsOseTT_numel','-depsc')
     end
