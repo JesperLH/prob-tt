@@ -1,11 +1,13 @@
 %% Run Experiments for EUSIPCO-2019
-% Runs the experiments described in [1].
+% Runs the experiments described in [1]. All experiments were run using
+% MATLAB version "9.1.0.441655 (R2016b)"
 %
 % [1] Hinrich, J. L. and Mørup, M., Probabilistic Tensor Train Decomposition.
 % https://github.com/JesperLH/prob-tt
 %
 
 addpath(genpath('./requiredfunctions'))
+addpath('./eusipco/')
 %addpath(genpath('../ncptensor'))
 %addpath(genpath('../tools'))
 
