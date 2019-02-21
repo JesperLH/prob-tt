@@ -1,4 +1,5 @@
 %% Tensor Train Experiments
+% REMOVE THIS EXPERIMENT???
 addpath('./requiredfunctions/')
 addpath(strjoin(strcat('../thirdparty-matlab/oseledets-TT-Toolbox-8332a6c/',{'','core', 'exp', 'cross', 'fmex', 'misc','solve'}),';'))
 
