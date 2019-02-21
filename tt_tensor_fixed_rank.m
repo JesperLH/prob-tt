@@ -1,4 +1,7 @@
 function [G] = tt_tensor_fixed_rank(X,D)
+% TT_TENSOR_FIXED_RANK(X,D) calculates the tensor train with the specified
+% size D.
+%
 
 if nargin < 1
     N = 20:-1:16;

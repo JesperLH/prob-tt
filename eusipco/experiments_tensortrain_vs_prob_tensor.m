@@ -1,5 +1,11 @@
 function experiments_tensortrain_vs_prob_tensor()
 %% Tensor Train Experiments
+%
+% This experiment is described in Section 3.2 in [1].
+%
+% [1] Hinrich, J. L. and Mørup, M., Probabilistic Tensor Train Decomposition.
+% https://github.com/JesperLH/prob-tt
+%
 addpath('./requiredfunctions/')
 addpath(genpath('./'))
 addpath(genpath('../ncptensor'))

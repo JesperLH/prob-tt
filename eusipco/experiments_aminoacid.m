@@ -1,4 +1,11 @@
 function experiments_aminoacid()
+% Visualizes the best PTT decomposition for the Amino-Acid dataset, see
+% Figure 3 in [1].
+%
+% [1] Hinrich, J. L. and Mørup, M., Probabilistic Tensor Train Decomposition.
+% https://github.com/JesperLH/prob-tt
+%
+
 addpath('../thirdparty-matlab/nway331/')
 load('../Data/Amino-Acid/claus.mat')
 scale_x = sqrt(var((X(:))));
@@ -40,7 +47,7 @@ figure; bar(final_elbo)
 
 X_recon = permute(constructTensorTrain(G), reverse_perm_idx);
 
-plotDataCleanDataAndDiff(X*scale_x, X_recon*scale_x)
+% plotDataCleanDataAndDiff(X*scale_x, X_recon*scale_x)
 
 
 constr = [0,0,0]; %Unconstrained

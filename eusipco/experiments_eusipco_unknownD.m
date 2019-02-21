@@ -1,5 +1,11 @@
 %% Tensor Train Experiments
 % Known Dmax and (un)known model order
+%
+% This experiment is described in Section 3.1 in [1].
+%
+% [1] Hinrich, J. L. and Mørup, M., Probabilistic Tensor Train Decomposition.
+% https://github.com/JesperLH/prob-tt
+%
 
 addpath('./requiredfunctions/')
 addpath('../thirdparty-matlab/oseledets-TT-Toolbox-8332a6c/')

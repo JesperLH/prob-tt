@@ -1,4 +1,10 @@
 function experiments_aminoacid_modelorder(permute_order)
+% Calculates a series of PTT decomposition for the Amino-Acid dataset, see
+% Section 3.3 and Table 1 in [1].
+%
+% [1] Hinrich, J. L. and Mørup, M., Probabilistic Tensor Train Decomposition.
+% https://github.com/JesperLH/prob-tt
+%
 
 if nargin < 1
     permute_order = 1:3;
