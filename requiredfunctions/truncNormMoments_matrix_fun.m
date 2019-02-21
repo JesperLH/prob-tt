@@ -1,5 +1,14 @@
 function [ logZhatOUT, ZhatOUT , muHatOUT , sigmaHatOUT ] =...
     truncNormMoments_matrix_fun( lowerBIN , upperBIN , muIN , sigmaIN )
+% Calculates the truncated zeroth, first, and second moments of a
+% univariate normal distribution.
+%
+% This code is an optimized version of John P Cunninghams function, e.g.
+% "truncNormMoments.m", available at
+% https://github.com/cunni/epmgp/blob/master/truncNormMoments.m 
+%
+% See Cunninghams code for an excellent description of what is going on.
+
 %% Init
 if ~isa(muIN,'gpuArray')
     lowerB = lowerBIN;

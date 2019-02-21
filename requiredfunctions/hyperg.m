@@ -11,6 +11,12 @@ function [f,V,lF]=hyperg(v,z,opt);
 %        4       Woods 2002 (non-calibrated)
 %        5       Bessel/Bessel (with decreasing v)
 % lF and V available for opt= 2,3,5 only!
+%
+% This function originates from,
+% Vaclav vSmidl and Anthony Quinn, “On bayesian principal component
+% analysis,” Computational statistics & data analysis, vol. 51, no. 9, pp.
+% 4101–4123, 2007  
+%
 
 [r,s]	= size(z);
 if nargin<3, opt=3; end;
