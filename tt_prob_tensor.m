@@ -1,5 +1,41 @@
 function [G, ES, EV, Etau, elbo] = tt_prob_tensor(X,G, D, varargin)
-%%TT_PROB_TENSOR Finds a probabilistic Tensor Train for Data X
+%TT_PROB_TENSOR Finds a probabilistic Tensor Train for a tensor X. The size
+%of the train is specified by D or by initializing with a specific tensor
+%train G (which then define D).
+% INPUT:
+%   X       A tensor to be compressed with mode sizes N.
+%   G       An initial tensor train, if empty a random initialization with
+%           latent dimension D is used in stead. G is an cell array and
+%           G{i} is a tensor of size (D(i) x N(i) x D(i+1) ).
+%   D       A vector specifying the size of the latent dimension,
+%           D(1)=D(end)=1 and length(D) = length(N)+1 .
+%   varargin    Variable input arguments,
+%       conv_crit   Convergence critia (default: 1e-6) for change in the
+%                   Evidence Lowerbound (ELBO).
+%       maxiter     Maximum number of iterations.
+%       verbose     Display progress of the algorithm ({'yes','no'})
+%       model_tau   Should the noise precision (tau) be estimated?
+%                   (default: true)
+%       fixed_tau   What iteration should the noise modeling begin? (default: 0)       
+%       tau_a0      Hyperparameter of tau (shape) (default: 1e-6)
+%       tau_b0      Hyperparameter of tau (rate) (default: 1e-6)
+%       model_lambda    Should the scale (lambda) of S be estimated?
+%                       (default: true) 
+%       fixed_tau   What iteration should modeling begin? (default: 0)       
+%       lambda_a0      Hyperparameter of lambda (shape) (default: 1e-6)
+%       lambda_b0      Hyperparameter of lambda (rate) (default: 1e-6)
+%   
+% OUTPUT:
+%   G       A cell array with the expected value of the estimated tensor
+%           train, note G{end} = ES*EV'.
+%   ES      A diagonal matrix (D(end-1) x D(end-1)) with expected value of
+%           the scale of each of the D(end-1) components.
+%   EV      The expected value of the last train cart (without the scale
+%           ES), this is a matrix of size (N(end) x D(end-1)). 
+%   Etau    Expected value of the noise precision (inverse variance).
+%   elbo    A vector (#iterations x 1) with the value of the Evidence
+%           Lowerbound (elbo) at each iteration.
+
 %% Read input and Setup Parameters
 paramNames = {'conv_crit', 'maxiter', ...
     'model_tau', 'fixed_tau', 'tau_a0', 'tau_b0',...
@@ -7,12 +43,12 @@ paramNames = {'conv_crit', 'maxiter', ...
     'model_S', 'fixed_S',...
     'model_V', 'fixed_V',...
     'model_G', 'fixed_G','verbose'};
-defaults = {1e-8, 100, ...
+defaults = {1e-6, 100, ...
     true, 0, 1e-6, 1e-6,... 
     true, 0, 1e-6, 1e-6,...
-    true, 0,...
-    true, 0,...
-    true, 0,...
+    true, 0,...  % On/off modeling of S (for debugging)
+    true, 0,...  % On/off modeling of V (for debugging)
+    true, 0,...  % On/off modeling of G (for debugging)
 	'yes'};
 % Initialize variables to default value or value given in varargin
 [conv_crit, max_iter, ...
@@ -49,26 +85,32 @@ else
 end
 
 
-%% Initialize
+%% Initialize Tensor Train
 SST = sum(sum(X(:).^2));
 E_lambda = lambda_alpha0/lambda_beta0;%sqrt(SST/numel(X))/D(end-1);
 E_log_lambda = log(E_lambda);
 s_lb = zeros(D(end-1),1);
 s_ub = ones(D(end-1),1)*inf;
 
+% Noise precision tau
+scale_x = var(X(:));
+if sqrt(scale_x) < 1 
+    Etau=tau_alpha0/tau_beta0*1/scale_x;
+else
+    Etau = tau_alpha0/tau_beta0;
+end
+if sqrt(scale_x) < 1e-5
+   warning(sprintf('The data has an extremely low scale (%6.4e), this may cause the algorithm to fail. Try rescaling the data.', sqrt(scale_x))) %#ok<SPWRN>
+end
 
+% Initialise the tensor train G, V, S
 if ~isempty(G)
-%     G_sizes = cellfun(@size, G,  'UniformOutput', false);
-%     D = ones(ndims(X)+1,1);
-%     for d = 1:ndims(X)-1
-%         D(d+1) = G_sizes{d}(end);
-%     end
-    
+    % User specified TT
     G{1} = squeeze(G{1});
     EV = G{end};
     ES = eye(size(G{end},1))*sqrt(norm(X(:),'fro')^2/D(end-1));
 else
-    
+    % Random initialized
     G=cell(length(N),1);
     for d = 1:length(N)-1
         G{d} = randn(D(d),N(d),D(d+1));
@@ -83,13 +125,9 @@ else
     
 end
 
-Etau=tau_alpha0/tau_beta0;%*1/mean(X(:).^2);
-
 if sum(cellfun(@numel, G)) >= numel(X)
-    warning('The number of elements in G is larger than X. This does not provide compression of X and may lead to unexpected performance')
+    warning('The number of elements in G is larger than X. This does not provide compression of X and may lead to unexpected performance.')
 end
-
-%%
 %% Setup how information should be displayed.
 if ~strcmpi(verbose,'no')
     disp([' '])
@@ -103,13 +141,12 @@ if ~strcmpi(verbose,'no')
 end
 
 %
-iter = 0;
 elbo = zeros(max_iter,1,'like', SST);
 rmse = zeros(max_iter,1,'like', SST);
 total_realtime = tic;
 total_cputime = cputime;
 
-%% Run algo
+%% Run iterative algorithm
 iter = 0;
 dELBO = inf;
 SSE =inf;
@@ -118,10 +155,10 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     iter = iter+1;
     time_tic_toc = tic;
     time_cpu = cputime;
-    %% Update each factor...
+    %% Update factors (train carts)
     if iter == 1 || model_G
-        for i = 1:ndims(X)-1
-%         for i = randperm(ndims(X)-1)
+        for i = 1:ndims(X)-1    % update factors sequentially
+%         for i = randperm(ndims(X)-1) % update factors in a randomized order
             
             % Contract modes
             sG = size(G{i});
@@ -144,7 +181,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
             assert(sum(abs(G{i}(:)))>0, 'An entire cart was turned off, Iteration %i', iter)
         end
     end
-    %% Update the last factor
+    %% Update the last factor (e.g. G{end} = S*V')
     x_con = contract_fixed_modes(X,G,ndims(X));
     
     % Update V
@@ -163,7 +200,6 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     
     % Update S
     if iter == 1 || model_S
-        
         ss_sig2 = 1./(1*Etau + E_lambda)*ones(size(EV,2),1);
         ss_mu = ss_sig2.*sum(EV'.*x_con, 2)*Etau;
                 
@@ -178,6 +214,9 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
         ES = diag(s_mu);
         ESS = sum(s_mu.^2 + s_var);
     end
+    G{end} = ES*EV';
+    
+    % Update the scale on S
     if model_lambda && iter > fixed_lambda
         est_lambda_alpha = lambda_alpha0 + size(EV,1)/2;
         est_lambda_beta = lambda_beta0 + ESS/2;
@@ -191,9 +230,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     P_lambda = -gammaln(lambda_alpha0)+lambda_alpha0*log(lambda_beta0)...
         +(lambda_alpha0-1)*E_log_lambda - lambda_beta0*E_lambda;
     
-    G{end} = ES*EV';
-    
-    %% Update the noise
+    %% Update the noise precision
     x_con = contract_fixed_modes(X,G,ndims(X));
     
     SSE = (SST+ESS-2*sum(sum(x_con .* G{end})));
@@ -215,7 +252,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     assert(Etau>0, 'Noise precision was negative!')
     assert(isreal(Elog_tau), 'Not real!')
     
-    %% Calculate Elbo
+    %% Calculate Evidence Lowerbound (ELBO)
     elbo(iter) = 0.5*numel(X)*(-log(2*pi)+Elog_tau)-0.5*SSE*Etau...
         +P_tau+H_tau...
         +sum(H_G)... %Note, P_G is 0, when P(G) is a uniform prior on the sphere.
@@ -224,7 +261,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
         +P_lambda+H_lambda;
   
     rmse(iter) = 0.5*SSE/numel(X);
-    %% Display
+    %% Display information
     if mod(iter,50)==0 && ~strcmpi(verbose,'no')
         fprintf('%s\n%s\n%s\n',dline, dheader, dline);
     end
@@ -232,7 +269,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     time_tic_toc = toc(time_tic_toc);
     time_cpu = cputime-time_cpu;
     if iter > 1
-        dCost = (rmse(iter)-rmse(iter-1))/abs(rmse(iter-1)); % Should decrease
+        %dCost = (rmse(iter)-rmse(iter-1))/abs(rmse(iter-1)); % Should decrease
         dELBO = (elbo(iter)-elbo(iter-1))/abs(elbo(iter-1)); % Shoud increase
 
         if ~strcmpi(verbose,'no')
@@ -255,6 +292,8 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     
     
 end
+fprintf('Completed.\n')
+
 if ismatrix(G{1})
     G{1} = permute(G{1}, [3,1,2]);
 end
@@ -269,6 +308,7 @@ rmse = rmse(1:iter);
 end
 
 function X_contr = contract_fixed_modes(X_contr,G, idx)
+% Contracts all but the "idx" mode of X_contr and G
 
 n_modes = ndims(X_contr);
 
@@ -303,6 +343,7 @@ end
 
 
 function entropy = gamma_entropy(a,b)
+% Calculates the entropy of a gamma distribution with rate a and shape b
 if size(b,2) > 1
     entropy = bsxfun(@minus,(gammaln(a)-(a-1).*psi(a)+a)',log(b));
 else
@@ -313,6 +354,8 @@ end
 
 function [prio, entr] = getPriorAndEntropy_tnorm(mu, sig2, logZhatOut, N, ...
     prior_log_value, prior_value)
+% Calculate the entropy and prior contribution of a truncated normal
+% distribution.
 
 lowerbound = 0;
 upperbound = inf;
