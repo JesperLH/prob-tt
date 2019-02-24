@@ -20,7 +20,7 @@ D_est = D;
 
 [G_est, ES, EV, Etau, elbo] = tt_prob_tensor(X, [], D_est,...
     'conv_crit', 1e-6, ...  % Continue until change in ELBO is below 1e-6 .
-    'maxiter', 100, ...  % Stop at convergence or after 100 iterations.
+    'maxiter', 50, ...  % Stop at convergence or after 100 iterations.
     'verbose', 'yes', ...  % Display output ('yes','no')
     'model_tau', true, ... % Should the noise precision (tau) be estimated?
     'fixed_tau', 0, ... % At what iteration should noise estimation begin? default: at the start (0).

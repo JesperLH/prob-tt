@@ -12,7 +12,7 @@ scale_x = sqrt(var((X(:))));
 X = X/scale_x;
 
 %Best solution
-D_est = [1, 5, 5, 1];
+D_est = [1, 6, 5, 1];
 perm_idx = [2,3,1];
 reverse_perm_idx = [3,1,2];
 
