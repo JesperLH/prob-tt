@@ -1,6 +1,11 @@
 %%
 load('C:\Users\jehi\Coding\prob-tt\eusipco\synthetic_tensortrain_vs_probtt.mat')
 font_size=12
+
+name_methods{end-3} = 'TTD(fixed, D=6)';
+name_methods{end-2} = 'TTD(fixed, D=12)';
+name_methods{end-1} = 'PTTD(D=6)';
+name_methods{end} = 'PTTD(D=12)';
 %%
 line_colors = ones(length(name_methods),3).*(1-(0.3+0.7*(length(name_methods):-1:1)/length(name_methods)))';
 line_colors(end-3:end,:) = [0.9,0,0; 0.9,0,0; 0, 0.1, 1; 0, 0.1, 1];
