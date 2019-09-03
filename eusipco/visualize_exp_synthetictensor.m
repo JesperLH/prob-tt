@@ -22,7 +22,8 @@ for is_known = [true, false]
         idx_sort = 1:n_perms;
         %snr_colors = distinguishable_colors(9,{'w'});
         snr_colors = ones(9,3).*(fliplr(linspace(0.1,0.7,9)))';
-        figure('units','normalized','position',[0.1,0.5,0.3,0.3])
+        %figure('units','normalized','position',[0.1,0.5,0.4,0.4])
+        figure('units','pixels','position',[50,50,788,492])
         for i_snr = 1:1:9
             
             if is_rmse
@@ -60,7 +61,7 @@ for is_known = [true, false]
         c_min = min(snr_colors(:,1));
         c_max = max(snr_colors(:,1));
         caxis([c_min,c_max])
-        set(cbh, 'Ticks', [c_min, c_max], 'TickLabels',{'Low SNR', 'High SNR'},'Fontsize',font_size-1)
+        set(cbh, 'Ticks', [c_min, c_max], 'TickLabels',{'SNR=-10dB', 'SNR=+10dB'},'Fontsize',font_size-1)
         
         % Fix ylabel and title
         if is_rmse

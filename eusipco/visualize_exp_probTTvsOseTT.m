@@ -2,17 +2,17 @@
 load('C:\Users\jehi\Coding\prob-tt\eusipco\synthetic_tensortrain_vs_probtt.mat')
 font_size=12
 
-name_methods{end-3} = 'TTD(fixed, D=6)';
-name_methods{end-2} = 'TTD(fixed, D=12)';
-name_methods{end-1} = 'PTTD(D=6)';
-name_methods{end} = 'PTTD(D=12)';
+name_methods{end-3} = 'TTD(D_{est}=D)';
+name_methods{end-2} = 'TTD(D_{est}=2\cdotD)';
+name_methods{end-1} = 'PTTD(D_{est}=D)';
+name_methods{end} = 'PTTD(D_{est}=2\cdotD)';
 %%
 line_colors = ones(length(name_methods),3).*(1-(0.3+0.7*(length(name_methods):-1:1)/length(name_methods)))';
 line_colors(end-3:end,:) = [0.9,0,0; 0.9,0,0; 0, 0.1, 1; 0, 0.1, 1];
 %
 for i = 1:3
     
-    figure('Position',[100*(i)^2,500,500,300])
+    figure('Position',[10*(i)^2,100,500,300])
     h_plot = cell(length(name_methods),1);
     hold on
     for j = 1:length(name_methods)
