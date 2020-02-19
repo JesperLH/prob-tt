@@ -149,9 +149,12 @@ total_cputime = cputime;
 %% Run iterative algorithm
 iter = 0;
 dELBO = inf;
-SSE =inf;
+SSE =0;
+dExpvar = inf; 
 
-while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fixed_tau
+while iter < max_iter && dELBO > conv_crit || iter <= fixed_tau
+        
+    SSE_old = SSE;
     iter = iter+1;
     time_tic_toc = tic;
     time_cpu = cputime;
@@ -175,7 +178,11 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
 %             assert(max(f)>eps, 'Subspace is pruned...')
             
             % Get expected value of G{i} and the entropy of vMF
-            G{i}=reshape(UU*diag(f)*VV', sG);
+            if iter == 1
+                G{i}=reshape(UU*VV', sG);
+            else
+                G{i}=reshape(UU*diag(f)*VV', sG);
+            end
             H_G(i)= lF-sum(sum(F(:).*G{i}(:)));  %#ok<AGROW>
             
             assert(sum(abs(G{i}(:)))>0, 'An entire cart was turned off, Iteration %i', iter)
@@ -235,6 +242,7 @@ while iter < max_iter && dELBO > conv_crit && SSE/SST > conv_crit || iter <= fix
     
     SSE = (SST+ESS-2*sum(sum(x_con .* G{end})));
     assert(SSE>=0, 'SSE was negative!')
+    dExpvar = ( ((1-SSE/SST)-(1-SSE_old/SST))/(1-SSE_old/SST) )^2;%fprintf('dExpvar=%6.4e\n',dExpvar)
     
     if model_tau && iter > fixed_tau
         est_alpha = tau_alpha0 + numel(X)/2;
